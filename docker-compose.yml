@@ -1,0 +1,54 @@
+
+services:
+  # Contenedor PHP-FPM con Laravel
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rynkeep_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+    networks:
+      - rynkeep_network
+
+  # Contenedor Servidor Web Nginx
+  web:
+    image: nginx:alpine
+    container_name: rynkeep_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - rynkeep_network
+
+  # Contenedor Base de Datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: rynkeep_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: rynkeep_db
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: rynkeep_user
+      MYSQL_PASSWORD: rynkeep_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - rynkeep_network
+
+networks:
+  rynkeep_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
