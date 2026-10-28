@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Control de Tiempo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #121214; color: #e1e1e6; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .card { background: #202024; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; width: 340px; }
+    .timer { font-size: 3rem; font-variant-numeric: tabular-nums; margin: 1rem 0; color: #00b37e; font-weight: bold; }
+    .total { margin-bottom: 1.5rem; color: #a8a8b3; font-size: 0.95rem; }
+    .buttons { display: flex; gap: 10px; justify-content: center; }
+    button { cursor: pointer; border: none; padding: 0.75rem 1.2rem; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+    .btn-start { background: #00b37e; color: #fff; }
+    .btn-start:hover { background: #00875f; }
+    .btn-stop { background: #e54; color: #fff; }
+    .btn-stop:hover { background: #c33; }
+    .btn-reset { background: #323238; color: #a8a8b3; margin-top: 1rem; font-size: 0.8rem; padding: 0.4rem 0.8rem; }
+    .btn-reset:hover { background: #3e3e46; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2 style="margin: 0; font-size: 1.2rem;">Proyecto en curso</h2>
+    <div class="timer" id="display">00:00:00</div>
+    
+    <div class="buttons">
+      <button id="toggleBtn" class="btn-start" onclick="toggle()">Iniciar</button>
+    </div>
+
+    <div class="total" style="margin-top: 1.5rem;">
+      Tiempo total acumulado:<br>
+      <strong id="totalDisplay" style="color: #fff; font-size: 1.1rem;">0h 0m 0s</strong>
+    </div>
+
+    <button class="btn-reset" onclick="resetTotal()">Resetear acumulado</button>
+  </div>
+
+  <script>
+    let running = false;
+    let startTime = 0;
+    let accumulatedTotal = parseInt(localStorage.getItem('proj_total_time') || '0', 10);
+
+    function formatTime(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTotalDisplay() {
+      const h = Math.floor(accumulatedTotal / 3600);
+      const m = Math.floor((accumulatedTotal % 3600) / 60);
+      const s = accumulatedTotal % 60;
+      document.getElementById('totalDisplay').textContent = `${h}h ${m}m ${s}s`;
+    }
+
+    updateTotalDisplay();
+
+    function updateCurrent() {
+      if (!running) return;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById('display').textContent = formatTime(elapsed);
+      requestAnimationFrame(updateCurrent);
+    }
+
+    function toggle() {
+      const btn = document.getElementById('toggleBtn');
+      if (!running) {
+        running = true;
+        startTime = Date.now();
+        btn.textContent = 'Detener y Guardar';
+        btn.className = 'btn-stop';
+        requestAnimationFrame(updateCurrent);
+      } else {
+        running = false;
+        const sessionElapsed = Math.floor((Date.now() - startTime) / 1000);
+        accumulatedTotal += sessionElapsed;
+        localStorage.setItem('proj_total_time', accumulatedTotal);
+        
+        btn.textContent = 'Iniciar';
+        btn.className = 'btn-start';
+        document.getElementById('display').textContent = '00:00:00';
+        updateTotalDisplay();
+      }
+    }
+
+    function resetTotal() {
+      if (confirm('¿Seguro que quieres reiniciar el tiempo total acumulado?')) {
+        accumulatedTotal = 0;
+        localStorage.removeItem('proj_total_time');
+        updateTotalDisplay();
+      }
+    }
+  </script>
+</body>
+</html>

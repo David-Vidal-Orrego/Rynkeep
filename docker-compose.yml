@@ -10,6 +10,8 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./src:/var/www/html
+      - ${RYNKEEP_STORAGE_PATH:-./almacenamiento}:/data/archivos
+      - ./docker/php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
     networks:
       - rynkeep_network
 
@@ -34,12 +36,13 @@ services:
     container_name: rynkeep_db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: rynkeep_db
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_USER: rynkeep_user
-      MYSQL_PASSWORD: rynkeep_password
+      environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - db_data:/var/lib/mysql
     networks:
