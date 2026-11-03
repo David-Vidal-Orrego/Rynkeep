@@ -5,11 +5,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArchivoController;
 use App\Http\Controllers\ExploradorController;
 use App\Http\Controllers\PapeleraController;
+use App\Http\Controllers\CarpetaController;
 
 Route::redirect('/', '/login');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [ExploradorController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/{carpeta?}', [ExploradorController::class, 'index'])->name('dashboard');
 
     # Archivos
     Route::post('/archivos', [ArchivoController::class, 'store'])->name('archivos.store');
@@ -20,7 +21,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/papelera', [PapeleraController::class, 'index'])->name('papelera.index');
     Route::post('/papelera/{id}/restaurar', [PapeleraController::class, 'restaurar'])->name('papelera.restaurar');
     Route::delete('/papelera/{id}', [PapeleraController::class, 'eliminar'])->name('papelera.eliminar');
+
+    Route::post('/carpetas', [CarpetaController::class, 'store'])->name('carpetas.store');
 });
+
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

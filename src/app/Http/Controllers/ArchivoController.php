@@ -16,16 +16,22 @@ class ArchivoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'archivo' => ['required', 'file', 'max:102400'], // en KB: 100 MB
+            'archivo' => ['required', 'file', 'max:102400'],
+            'carpeta_id' => ['nullable', 'integer'],
         ]);
 
         $fichero = $request->file('archivo');
         $tamano = $fichero->getSize();
         $usuarioId = $request->user()->id;
         $ruta = null;
+        $carpetaId = $request->input('carpeta_id');
+
+        if ($carpetaId) {
+            abort_if($request->user()->carpetas()->find($carpetaId) === null, 404);
+        }
 
         try {
-            DB::transaction(function () use ($fichero, $tamano, $usuarioId, &$ruta) {
+            DB::transaction(function () use ($fichero, $tamano, $usuarioId, $carpetaId, &$ruta) {
                 $usuario = Usuario::whereKey($usuarioId)->lockForUpdate()->first();
 
                 if ($usuario->espacio_usado + $tamano > $usuario->espacio_limite) {
@@ -39,7 +45,7 @@ class ArchivoController extends Controller
 
                 $archivo = new Archivo([
                     'nombre_original' => mb_substr($fichero->getClientOriginalName(), 0, 255),
-                    'carpeta_id' => null,
+                    'carpeta_id' => $carpetaId ?: null,
                 ]);
                 $archivo->usuario_id = $usuario->id;
                 $archivo->ruta_almacenamiento = $ruta;
@@ -73,7 +79,7 @@ class ArchivoController extends Controller
     public function destroy(Request $request, Archivo $archivo)
     {
         abort_if($archivo->usuario_id !== $request->user()->id, 404);
-        
+
         $archivo->enlace()->delete();
 
         $archivo->delete();
