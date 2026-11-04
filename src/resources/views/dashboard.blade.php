@@ -39,15 +39,16 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('archivos.store') }}" enctype="multipart/form-data" class="flex items-center gap-3">
+            <form id="form-subida" method="POST" action="{{ route('archivos.store') }}" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="carpeta_id" value="{{ $carpetaActual?->id }}">
-                <input type="file" name="archivo" required class="text-sm text-suave cursor-pointer
-                    file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-borde
-                    file:bg-superficie file:px-4 file:py-2 file:text-sm file:font-medium file:text-texto
-                    hover:file:bg-fondo">
-                <x-primary-button>Subir</x-primary-button>
+                <input type="file" name="archivo" id="archivo" class="hidden" data-max="{{ 100 * 1024 * 1024 }}">
+                <label for="archivo"
+                    class="inline-flex items-center px-4 py-2 bg-primario border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primario-hover cursor-pointer transition ease-in-out duration-150">
+                    <span id="texto-subir">Subir archivo</span>
+                </label>
             </form>
+
             <x-input-error :messages="$errors->get('archivo')" />
 
             @if (session('status'))
@@ -91,3 +92,20 @@
         </div>
     </div>
 </x-app-layout>
+
+
+<script>
+    document.getElementById('archivo').addEventListener('change', function() {
+        var fichero = this.files[0];
+        if (!fichero) return;
+
+        if (fichero.size > Number(this.dataset.max)) {
+            alert('El archivo supera el límite de 100 MB.');
+            this.value = '';
+            return;
+        }
+
+        document.getElementById('texto-subir').textContent = 'Subiendo...';
+        document.getElementById('form-subida').submit();
+    });
+</script>
