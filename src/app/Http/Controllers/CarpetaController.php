@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 
 class CarpetaController extends Controller
 {
+    /**
+     * Crea una carpeta, dentro de otra si se indica, comprobando que la carpeta padre es del usuario.
+     */
     public function store(Request $request)
     {
         $datos = $request->validate([
@@ -20,6 +23,6 @@ class CarpetaController extends Controller
 
         $request->user()->carpetas()->create($datos);
 
-        return back()->with('status', 'Carpeta creada.');
+        return back()->with('status', __('Carpeta creada.'));
     }
 }

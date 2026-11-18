@@ -1,29 +1,41 @@
 <section>
     <header>
-        <h2 class="text-lg font-medium text-texto">Apariencia</h2>
+        <h2 class="text-lg font-medium text-texto">{{ __('Apariencia') }}</h2>
         <p class="mt-1 text-sm text-suave">
-            Elige el tema y la letra.
+            {{ __('Elige el tema y la letra.') }}
         </p>
     </header>
 
     <div class="mt-6 space-y-6">
         <div>
-            <x-input-label for="tema" value="Tema" />
+            <x-input-label for="tema" :value="__('Tema')" />
             <select id="tema" class="mt-1 block w-full bg-superficie text-texto border-borde focus:border-primario focus:ring-primario rounded-md shadow-sm">
-                <option value="sistema">Seguir el del sistema</option>
-                <option value="claro">Claro</option>
-                <option value="oscuro">Oscuro</option>
+                <option value="sistema">{{ __('Seguir el del sistema') }}</option>
+                <option value="claro">{{ __('Claro') }}</option>
+                <option value="oscuro">{{ __('Oscuro') }}</option>
             </select>
         </div>
 
+        <form method="POST" action="{{ route('profile.idioma') }}">
+            @csrf
+            @method('PATCH')
+            <x-input-label for="idioma" :value="__('Idioma')" />
+            <select id="idioma" name="idioma" onchange="this.form.submit()" class="mt-1 block w-full bg-superficie text-texto border-borde focus:border-primario focus:ring-primario rounded-md shadow-sm">
+                <option value="">{{ __('Idioma del sistema') }}</option>
+                @foreach (config('rynkeep.idiomas') as $codigo => $nombre)
+                    <option value="{{ $codigo }}" @selected(auth()->user()->idioma === $codigo)>{{ $nombre }}</option>
+                @endforeach
+            </select>
+        </form>
+
         <div>
-            <x-input-label for="fuente" value="Letra" />
+            <x-input-label for="fuente" :value="__('Letra')" />
             <select id="fuente" class="mt-1 block w-full bg-superficie text-texto border-borde focus:border-primario focus:ring-primario rounded-md shadow-sm">
                 <option value="nunito">Nunito</option>
                 <option value="inter">Inter</option>
                 <option value="atkinson">Atkinson Hyperlegible</option>
                 <option value="comic">Comic</option>
-                <option value="sistema">La del sistema</option>
+                <option value="sistema">{{ __('La del sistema') }}</option>
             </select>
         </div>
     </div>

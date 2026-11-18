@@ -13,11 +13,19 @@ use Throwable;
 
 class ArchivoController extends Controller
 {
+    /**
+     * Sube un archivo. Comprueba el tamaño máximo y el espacio libre del usuario dentro de una transacción con el usuario bloqueado,
+     * para que dos subidas a la vez no se salten el límite. Si algo falla, borra el fichero que ya se hubiera guardado.
+     */
     public function store(Request $request)
     {
+        $maximoMb = config('rynkeep.tamano_maximo_mb');
+
         $request->validate([
-            'archivo' => ['required', 'file', 'max:102400'],
+            'archivo' => ['required', 'file', 'max:'.($maximoMb * 1024)],
             'carpeta_id' => ['nullable', 'integer'],
+        ], [
+            'archivo.max' => __('El archivo supera el límite de :mb MB.', ['mb' => $maximoMb]),
         ]);
 
         $fichero = $request->file('archivo');
@@ -36,7 +44,7 @@ class ArchivoController extends Controller
 
                 if ($usuario->espacio_usado + $tamano > $usuario->espacio_limite) {
                     throw ValidationException::withMessages([
-                        'archivo' => 'No tienes espacio suficiente para subir este archivo.',
+                        'archivo' => __('No tienes espacio suficiente para subir este archivo.'),
                     ]);
                 }
 
@@ -62,9 +70,12 @@ class ArchivoController extends Controller
             throw $e;
         }
 
-        return back()->with('status', 'Archivo subido.');
+        return back()->with('status', __('Archivo subido.'));
     }
 
+    /**
+     * Descarga un archivo del usuario. Si es de otro usuario, responde como si no existiera.
+     */
     public function descargar(Request $request, Archivo $archivo)
     {
         abort_if($archivo->usuario_id !== $request->user()->id, 404);
@@ -76,6 +87,9 @@ class ArchivoController extends Controller
         );
     }
 
+    /**
+     * Envía un archivo a la papelera y le quita el enlace público, si lo tenía.
+     */
     public function destroy(Request $request, Archivo $archivo)
     {
         abort_if($archivo->usuario_id !== $request->user()->id, 404);
@@ -84,6 +98,6 @@ class ArchivoController extends Controller
 
         $archivo->delete();
 
-        return back()->with('status', 'Archivo enviado a la papelera.');
+        return back()->with('status', __('Archivo enviado a la papelera.'));
     }
 }

@@ -7,6 +7,9 @@ use App\Models\Carpeta;
 
 class ExploradorController extends Controller
 {
+    /**
+     * Pantalla Mis archivos: carpetas y archivos de la carpeta actual (o de la raíz) y la ruta para las migas de pan.
+     */
     public function index(Request $request, ?Carpeta $carpeta = null)
     {
         $usuario = $request->user();
@@ -22,6 +25,7 @@ class ExploradorController extends Controller
 
         $archivos = $usuario->archivos()
             ->where('carpeta_id', $carpeta?->id)
+            ->with('enlace')
             ->latest()
             ->get();
 

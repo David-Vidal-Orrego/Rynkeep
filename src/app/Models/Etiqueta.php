@@ -12,11 +12,17 @@ class Etiqueta extends Model
 
     protected $fillable = ['nombre', 'color'];
 
+    /**
+     * Usuario dueño de la etiqueta.
+     */
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(Usuario::class);
     }
 
+    /**
+     * Archivos que tienen esta etiqueta.
+     */
     public function archivos(): BelongsToMany
     {
         return $this->belongsToMany(Archivo::class, 'archivo_etiqueta')->withTimestamps();

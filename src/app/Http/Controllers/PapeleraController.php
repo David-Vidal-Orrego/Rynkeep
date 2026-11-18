@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Usuario;
+use App\Support\Papelera;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class PapeleraController extends Controller
 {
+    /**
+     * Lista los archivos de la papelera del usuario, los más recientes primero.
+     */
     public function index(Request $request)
     {
         $archivos = $request->user()->archivos()
@@ -19,34 +20,27 @@ class PapeleraController extends Controller
         return view('papelera', ['archivos' => $archivos]);
     }
 
+    /**
+     * Saca un archivo de la papelera.
+     */
     public function restaurar(Request $request, int $id)
     {
         $archivo = $request->user()->archivos()->onlyTrashed()->findOrFail($id);
 
         $archivo->restore();
 
-        return back()->with('status', 'Archivo restaurado.');
+        return back()->with('status', __('Archivo restaurado.'));
     }
 
+    /**
+     * Borra un archivo de la papelera para siempre.
+     */
     public function eliminar(Request $request, int $id)
     {
         $archivo = $request->user()->archivos()->onlyTrashed()->findOrFail($id);
 
-        $ruta = $archivo->ruta_almacenamiento;
-        $tamano = $archivo->tamano;
-        $usuarioId = $request->user()->id;
+        Papelera::eliminarDefinitivamente($archivo);
 
-        DB::transaction(function () use ($archivo, $tamano, $usuarioId) {
-            $usuario = Usuario::whereKey($usuarioId)->lockForUpdate()->first();
-
-            $archivo->forceDelete();
-
-            $usuario->espacio_usado = max(0, $usuario->espacio_usado - $tamano);
-            $usuario->save();
-        });
-
-        Storage::disk('archivos')->delete($ruta);
-
-        return back()->with('status', 'Archivo eliminado definitivamente.');
+        return back()->with('status', __('Archivo eliminado definitivamente.'));
     }
 }

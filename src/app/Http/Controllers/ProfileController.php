@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -33,5 +34,19 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
+    /**
+     * Cambia el idioma del usuario. Vacio = usar el del sistema.
+     */
+    public function actualizarIdioma(Request $request): RedirectResponse
+    {
+        $datos = $request->validate([
+            'idioma' => ['nullable', Rule::in(array_keys(config('rynkeep.idiomas')))],
+        ]);
 
+        $usuario = $request->user();
+        $usuario->idioma = $datos['idioma'] ?? null;
+        $usuario->save();
+
+        return Redirect::route('profile.edit');
+    }
 }

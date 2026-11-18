@@ -6,8 +6,8 @@ server {
     access_log /var/log/nginx/access.log;
     root /var/www/html/public;
 
-    # Límite amplio para permitir subida de archivos pesados
-    client_max_body_size 100M;
+    # Tamaño máximo de subida: se rellena al arrancar con RYNKEEP_TAMANO_MAXIMO_MB
+    client_max_body_size ${RYNKEEP_TAMANO_MAXIMO_MB}M;
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;

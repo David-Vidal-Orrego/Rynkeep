@@ -15,6 +15,9 @@ class EnlaceCompartido extends Model
 
     protected $hidden = ['contrasena'];
 
+    /**
+     * Conversiones automáticas: la contraseña se guarda cifrada y la caducidad es una fecha.
+     */
     protected function casts(): array
     {
         return [
@@ -23,6 +26,10 @@ class EnlaceCompartido extends Model
         ];
     }
 
+    /**
+     * Al crear un enlace se genera su token aleatorio. Al guardarlo se comprueba
+     * que apunte a un archivo o a una carpeta, pero no a los dos a la vez.
+     */
     protected static function booted(): void
     {
         static::creating(function (EnlaceCompartido $enlace) {
@@ -36,16 +43,25 @@ class EnlaceCompartido extends Model
         });
     }
 
+    /**
+     * Archivo al que apunta el enlace.
+     */
     public function archivo(): BelongsTo
     {
         return $this->belongsTo(Archivo::class);
     }
 
+    /**
+     * Carpeta a la que apunta el enlace.
+     */
     public function carpeta(): BelongsTo
     {
         return $this->belongsTo(Carpeta::class);
     }
 
+    /**
+     * Indica si el enlace tiene fecha de caducidad y ya ha pasado.
+     */
     public function haCaducado(): bool
     {
         return $this->fecha_expiracion !== null && $this->fecha_expiracion->isPast();

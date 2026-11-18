@@ -12,6 +12,10 @@ class CrearAdmin extends Command
 
     protected $description = 'Crea una cuenta de administrador';
 
+    /**
+     * Crea una cuenta de administrador pidiendo por consola el nombre, el correo y la contraseña.
+     * Si no se indica --limite, el espacio de la cuenta es el que viene del .env.
+     */
     public function handle(): int
     {
         $nombre = $this->ask('Nombre');

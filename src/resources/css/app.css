@@ -21,6 +21,8 @@
         --color-primario: #7c3aed;
         --color-primario-hover: #6d28d9;
         --color-peligro: #dc2626;
+        --color-logo-cara: #2a2145;
+        --color-logo-ojos: #8b5cf6;
     }
 
     .oscuro {
@@ -32,6 +34,8 @@
         --color-primario: #8b5cf6;
         --color-primario-hover: #a78bfa;
         --color-peligro: #f87171;
+        --color-logo-cara: #c4b5fd;
+        --color-logo-ojos: #7c3aed;
     }
 
     html[data-fuente="nunito"] {
