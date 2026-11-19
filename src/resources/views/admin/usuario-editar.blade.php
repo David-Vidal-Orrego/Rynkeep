@@ -4,7 +4,7 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="max-w-xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-xl sm:px-6 lg:px-8">
             <form method="POST" action="{{ route('admin.usuarios.update', $usuario) }}" class="bg-superficie shadow-sm sm:rounded-lg p-6 space-y-6">
                 @csrf
                 @method('PATCH')

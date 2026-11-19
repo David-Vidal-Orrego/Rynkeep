@@ -6,7 +6,7 @@ class Idiomas
 {
 
     /**
-     * Idiomas disponibles: uno por cada archivo lang/xx.json que tenga la clave "_idioma" (el nombre que sale en el selector).
+     * Idiomas disponibles: uno por cada archivo que tenga la clave "_idioma".
      * Devuelve ['es' => 'Español', 'en' => 'English', ...]. Un archivo sin esa clave, o con un nombre raro, se ignora.
      */
     public static function disponibles(): array

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Archivo;
+use App\Models\Carpeta;
 use App\Models\EnlaceCompartido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,8 +13,8 @@ use Illuminate\Support\Facades\Storage;
 class EnlacePublicoController extends Controller
 {
     /**
-     * Página pública de un enlace: caducado, pide contraseña o muestra el archivo para descargar.
-     * Si hay contraseña y aún no se ha puesto, no se enseña ni el nombre del archivo.
+     * Página pública de un enlace: caducado, pide contraseña o muestra el archivo o la carpeta.
+     * Si hay contraseña y aún no se ha puesto, no se enseña ni el nombre del contenido.
      */
     public function mostrar(Request $request, string $token)
     {
@@ -23,7 +25,15 @@ class EnlacePublicoController extends Controller
         }
 
         if ($this->pideContrasena($request, $enlace)) {
-            return view('enlace-publico', ['estado' => 'contrasena', 'token' => $token]);
+            return view('enlace-publico', [
+                'estado' => 'contrasena',
+                'token' => $token,
+                'tipo' => $enlace->carpeta_id ? 'carpeta' : 'archivo',
+            ]);
+        }
+
+        if ($enlace->carpeta_id) {
+            return $this->mostrarCarpeta($request, $enlace, $token);
         }
 
         return view('enlace-publico', [
@@ -79,7 +89,7 @@ class EnlacePublicoController extends Controller
     }
 
     /**
-     * Descarga el archivo de un enlace. Repite todas las comprobaciones para que no se pueda saltar
+     * Descarga el archivo de un enlace de archivo. Repite todas las comprobaciones para que no se pueda saltar
      * la contraseña escribiendo la dirección de descarga a mano.
      */
     public function descargar(Request $request, string $token)
@@ -88,9 +98,67 @@ class EnlacePublicoController extends Controller
 
         abort_if($enlace->haCaducado(), 410);
         abort_if($this->pideContrasena($request, $enlace), 403);
+        abort_if($enlace->archivo === null, 404);
 
-        $archivo = $enlace->archivo;
+        return $this->enviar($enlace->archivo);
+    }
 
+    /**
+     * Descarga un archivo que está dentro de una carpeta compartida. Además de caducidad y contraseña,
+     * comprueba que el archivo exista, no esté en la papelera y esté dentro de la carpeta del enlace,
+     * para que cambiar el número en la dirección no permita ver archivos de fuera.
+     */
+    public function descargarArchivo(Request $request, string $token, int $archivo)
+    {
+        $enlace = $this->buscar($token);
+
+        abort_if($enlace->carpeta === null, 404);
+        abort_if($enlace->haCaducado(), 410);
+        abort_if($this->pideContrasena($request, $enlace), 403);
+
+        $archivo = Archivo::find($archivo);
+
+        abort_if($archivo === null || $archivo->carpeta === null || ! $archivo->carpeta->estaDentroDe($enlace->carpeta), 404);
+
+        return $this->enviar($archivo);
+    }
+
+    /**
+     * Muestra el contenido de una carpeta compartida: la carpeta raíz o una subcarpeta (parámetro c).
+     * Si piden una subcarpeta que no está dentro de la compartida, responde 404.
+     */
+    private function mostrarCarpeta(Request $request, EnlaceCompartido $enlace, string $token)
+    {
+        $raiz = $enlace->carpeta;
+        $actual = $raiz;
+
+        if ($request->filled('c')) {
+            $actual = Carpeta::find((int) $request->query('c'));
+
+            abort_if($actual === null || ! $actual->estaDentroDe($raiz), 404);
+        }
+
+        $ruta = [];
+        for ($paso = $actual; $paso !== null && $paso->id !== $raiz->id; $paso = $paso->padre) {
+            array_unshift($ruta, $paso);
+        }
+
+        return view('enlace-publico', [
+            'estado' => 'carpeta',
+            'token' => $token,
+            'raiz' => $raiz,
+            'actual' => $actual,
+            'ruta' => $ruta,
+            'subcarpetas' => $actual->subcarpetas()->orderBy('nombre')->get(),
+            'archivos' => $actual->archivos()->orderBy('nombre_original')->get(),
+        ]);
+    }
+
+    /**
+     * Envía un archivo para descargar, con cabeceras que impiden que el navegador lo interprete como una página.
+     */
+    private function enviar(Archivo $archivo)
+    {
         return Storage::disk('archivos')->download(
             $archivo->ruta_almacenamiento,
             $archivo->nombre_original,
@@ -102,13 +170,13 @@ class EnlacePublicoController extends Controller
     }
 
     /**
-     * Busca el enlace por su token. Da 404 si no existe, si no apunta a un archivo o si el archivo está en la papelera.
+     * Busca el enlace por su token. Da 404 si no existe o si su archivo o su carpeta ya no están disponibles (por ejemplo, en la papelera).
      */
     private function buscar(string $token): EnlaceCompartido
     {
         $enlace = EnlaceCompartido::where('token', $token)->first();
 
-        abort_if($enlace === null || $enlace->archivo === null, 404);
+        abort_if($enlace === null || ($enlace->archivo === null && $enlace->carpeta === null), 404);
 
         return $enlace;
     }

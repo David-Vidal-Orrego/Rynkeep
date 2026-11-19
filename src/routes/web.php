@@ -21,12 +21,18 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/archivos/{archivo}/enlace', [EnlaceController::class, 'store'])->name('enlaces.store');
     Route::delete('/archivos/{archivo}/enlace', [EnlaceController::class, 'destroy'])->name('enlaces.destroy');
+    Route::post('/carpetas/{carpeta}/enlace', [EnlaceController::class, 'storeCarpeta'])->name('enlaces.carpeta.store');
+    Route::delete('/carpetas/{carpeta}/enlace', [EnlaceController::class, 'destroyCarpeta'])->name('enlaces.carpeta.destroy');
 
     Route::get('/papelera', [PapeleraController::class, 'index'])->name('papelera.index');
     Route::post('/papelera/{id}/restaurar', [PapeleraController::class, 'restaurar'])->name('papelera.restaurar');
     Route::delete('/papelera/{id}', [PapeleraController::class, 'eliminar'])->name('papelera.eliminar');
+    Route::post('/papelera/carpetas/{id}/restaurar', [PapeleraController::class, 'restaurarCarpeta'])->name('papelera.carpeta.restaurar');
+    Route::delete('/papelera/carpetas/{id}', [PapeleraController::class, 'eliminarCarpeta'])->name('papelera.carpeta.eliminar');
 
     Route::post('/carpetas', [CarpetaController::class, 'store'])->name('carpetas.store');
+    Route::patch('/carpetas/{carpeta}', [CarpetaController::class, 'update'])->name('carpetas.update');
+    Route::delete('/carpetas/{carpeta}', [CarpetaController::class, 'destroy'])->name('carpetas.destroy');
 });
 
 Route::middleware('auth')->group(function () {
@@ -50,5 +56,7 @@ Route::post('/s/{token}/acceso', [EnlacePublicoController::class, 'acceso'])
     ->where('token', '[A-Za-z0-9]{64}')->name('enlace.acceso');
 Route::get('/s/{token}/descargar', [EnlacePublicoController::class, 'descargar'])
     ->where('token', '[A-Za-z0-9]{64}')->name('enlace.descarga');
+Route::get('/s/{token}/archivo/{archivo}', [EnlacePublicoController::class, 'descargarArchivo'])
+    ->where('token', '[A-Za-z0-9]{64}')->where('archivo', '[0-9]+')->name('enlace.descarga.archivo');
 
 require __DIR__ . '/auth.php';

@@ -59,3 +59,19 @@
         @apply bg-fondo text-texto;
     }
 }
+
+[x-cloak] {
+    display: none !important;
+}
+
+.icono-oscuro {
+    display: none;
+}
+
+.oscuro .icono-claro {
+    display: none;
+}
+
+.oscuro .icono-oscuro {
+    display: inline-block;
+}

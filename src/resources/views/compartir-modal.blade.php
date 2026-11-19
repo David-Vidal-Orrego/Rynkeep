@@ -1,19 +1,22 @@
 @php
-    $enlace = $archivo->enlace;
-    $bolsa = 'enlace-'.$archivo->id;
-    $abrir = $errors->hasBag($bolsa) || session('compartir_abierto') == $archivo->id;
+    $esCarpeta = $elemento instanceof \App\Models\Carpeta;
+    $clave = ($esCarpeta ? 'carpeta-' : 'archivo-').$elemento->id;
+    $enlace = $elemento->enlace;
+    $bolsa = 'enlace-'.$clave;
+    $nombre = $esCarpeta ? $elemento->nombre : $elemento->nombre_original;
+    $abrir = $errors->hasBag($bolsa) || session('compartir_abierto') === $clave;
 @endphp
 
-<x-modal :name="'compartir-'.$archivo->id" :show="$abrir" maxWidth="lg">
+<x-modal :name="'compartir-'.$clave" :show="$abrir" maxWidth="lg">
     <div class="p-6 space-y-6">
-        <h2 class="text-lg font-medium text-texto">{{ __('Compartir «:nombre»', ['nombre' => $archivo->nombre_original]) }}</h2>
+        <h2 class="text-lg font-medium text-texto">{{ __('Compartir «:nombre»', ['nombre' => $nombre]) }}</h2>
 
         @if ($enlace)
             <div class="space-y-2">
-                <x-input-label :for="'url-'.$archivo->id" :value="__('Enlace público')" />
+                <x-input-label :for="'url-'.$clave" :value="__('Enlace público')" />
                 <div class="flex items-center gap-2">
-                    <x-text-input :id="'url-'.$archivo->id" type="text" readonly class="block w-full" :value="route('enlace.publico', $enlace->token)" />
-                    <button type="button" onclick="copiarEnlace('url-{{ $archivo->id }}', this)"
+                    <x-text-input :id="'url-'.$clave" type="text" readonly class="block w-full" :value="route('enlace.publico', $enlace->token)" />
+                    <button type="button" onclick="copiarEnlace('url-{{ $clave }}', this)"
                         class="px-3 py-2 text-xs font-semibold uppercase tracking-widest rounded-md border border-borde bg-superficie text-texto hover:bg-fondo transition ease-in-out duration-150">
                         {{ __('Copiar') }}
                     </button>
@@ -21,11 +24,11 @@
                 @if ($enlace->haCaducado())
                     <p class="text-sm text-peligro">
                         {{ __('Este enlace caducó el :fecha y ya no funciona.', ['fecha' => $enlace->fecha_expiracion->format('d/m/Y H:i')]) }}
-                        {{ __('Crea uno nuevo o deja de compartir el archivo.') }}
+                        {{ $esCarpeta ? __('Crea uno nuevo o deja de compartir la carpeta.') : __('Crea uno nuevo o deja de compartir el archivo.') }}
                     </p>
                 @else
                     <p class="text-sm text-suave">
-                        {{ __('Cualquiera con este enlace puede descargar el archivo.') }}
+                        {{ $esCarpeta ? __('Cualquiera con este enlace puede ver y descargar el contenido de la carpeta.') : __('Cualquiera con este enlace puede descargar el archivo.') }}
                         @if ($enlace->contrasena)
                             {{ __('Necesitará la contraseña que has puesto.') }}
                         @endif
@@ -38,7 +41,7 @@
                 @endif
             </div>
 
-            <form method="POST" action="{{ route('enlaces.destroy', $archivo) }}">
+            <form method="POST" action="{{ route($esCarpeta ? 'enlaces.carpeta.destroy' : 'enlaces.destroy', $elemento) }}">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="text-sm underline text-peligro">{{ __('Dejar de compartir') }}</button>
@@ -52,18 +55,18 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('enlaces.store', $archivo) }}" class="space-y-4">
+        <form method="POST" action="{{ route($esCarpeta ? 'enlaces.carpeta.store' : 'enlaces.store', $elemento) }}" class="space-y-4">
             @csrf
 
             <div>
-                <x-input-label :for="'contrasena-'.$archivo->id" :value="__('Contraseña (opcional, mínimo 6 caracteres)')" />
-                <x-text-input :id="'contrasena-'.$archivo->id" name="contrasena" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+                <x-input-label :for="'contrasena-'.$clave" :value="__('Contraseña (opcional, mínimo 6 caracteres)')" />
+                <x-text-input :id="'contrasena-'.$clave" name="contrasena" type="password" class="mt-1 block w-full" autocomplete="new-password" />
                 <x-input-error class="mt-2" :messages="$errors->getBag($bolsa)->get('contrasena')" />
             </div>
 
             <div>
-                <x-input-label :for="'caduca-'.$archivo->id" :value="__('Caduca el (opcional)')" />
-                <x-text-input :id="'caduca-'.$archivo->id" name="fecha_expiracion" type="datetime-local" class="mt-1 block w-full" />
+                <x-input-label :for="'caduca-'.$clave" :value="__('Caduca el (opcional)')" />
+                <x-text-input :id="'caduca-'.$clave" name="fecha_expiracion" type="datetime-local" class="mt-1 block w-full" />
                 <x-input-error class="mt-2" :messages="$errors->getBag($bolsa)->get('fecha_expiracion')" />
             </div>
 

@@ -19,20 +19,26 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="min-h-screen bg-fondo">
+    <div x-data="{ lateral: false }" class="min-h-screen bg-fondo">
         @include('layouts.navigation')
 
-        @isset($header)
-        <header class="bg-superficie shadow">
-            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                {{ $header }}
-            </div>
-        </header>
-        @endisset
+        <div class="flex">
+            @include('layouts.lateral')
 
-        <main>
-            {{ $slot }}
-        </main>
+            <div class="flex-1 min-w-0">
+                @isset($header)
+                <header class="bg-superficie shadow">
+                    <div class="max-w-7xl py-6 px-4 sm:px-6 lg:px-8">
+                        {{ $header }}
+                    </div>
+                </header>
+                @endisset
+
+                <main>
+                    {{ $slot }}
+                </main>
+            </div>
+        </div>
     </div>
 </body>
 

@@ -57,4 +57,23 @@ class Carpeta extends Model
     {
         return $this->hasOne(EnlaceCompartido::class);
     }
+
+    /**
+     * Indica si esta carpeta es la carpeta raíz dada o está dentro de ella, a cualquier profundidad.
+     * Sube de padre en padre; si algún padre está en la papelera o no existe, la respuesta es no.
+     */
+    public function estaDentroDe(Carpeta $raiz): bool
+    {
+        $actual = $this;
+
+        for ($i = 0; $i < 200 && $actual !== null; $i++) {
+            if ($actual->id === $raiz->id) {
+                return true;
+            }
+
+            $actual = $actual->padre;
+        }
+
+        return false;
+    }
 }
