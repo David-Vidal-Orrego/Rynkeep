@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/idioma', [ProfileController::class, 'actualizarIdioma'])->name('profile.idioma');
+    Route::patch('/profile/apariencia', [ProfileController::class, 'actualizarApariencia'])->name('profile.apariencia');
     Route::post('/profile/tokens', [TokenApiController::class, 'store'])->name('profile.tokens.store');
     Route::delete('/profile/tokens/{token}', [TokenApiController::class, 'destroy'])->name('profile.tokens.destroy');
 });

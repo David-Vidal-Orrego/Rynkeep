@@ -162,5 +162,10 @@
     "La fecha de since no es válida. Usa el formato 2026-11-25T10:00:00Z.": "The since date is not valid. Use the format 2026-11-25T10:00:00Z.",
     "Solo se puede crear un token personal con un token de sesión.": "A personal token can only be created with a session token.",
     "El archivo ya no existe en el servidor.": "The file no longer exists on the server.",
-    "El archivo del servidor ha cambiado desde la última vez que lo viste.": "The file on the server has changed since you last saw it."
+    "El archivo del servidor ha cambiado desde la última vez que lo viste.": "The file on the server has changed since you last saw it.",
+    "Tamaño de letra": "Text size",
+    "Normal": "Normal",
+    "Grande": "Large",
+    "Muy grande": "Extra large",
+    "Indica al menos tema, letra o tamano.": "Give at least tema, letra or tamano."
 }

@@ -55,6 +55,13 @@
         --fuente: ui-sans-serif, system-ui, sans-serif;
     }
 
+    html[data-tamano="grande"] {
+        font-size: 112.5%;
+    }
+    html[data-tamano="muy_grande"] {
+        font-size: 125%;
+    }
+
     body {
         @apply bg-fondo text-texto;
     }

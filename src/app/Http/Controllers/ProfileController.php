@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Support\Apariencia;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,5 +50,16 @@ class ProfileController extends Controller
         $usuario->save();
 
         return Redirect::route('profile.edit');
+    }
+
+    /**
+     * Guarda las preferencias de apariencia del usuario (tema, letra y tamaño) cuando las cambia en el Perfil.
+     * La página lo llama en segundo plano al cambiar un selector. Acepta solo valores permitidos y devuelve las preferencias completas.
+     */
+    public function actualizarApariencia(Request $request): JsonResponse
+    {
+        $datos = $request->validate(Apariencia::reglas());
+
+        return response()->json(Apariencia::guardar($request->user(), $datos));
     }
 }
