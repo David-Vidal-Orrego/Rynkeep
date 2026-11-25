@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Support\Formato;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class Archivo extends Model
 {
@@ -26,6 +28,7 @@ class Archivo extends Model
     {
         return [
             'tamano' => 'integer',
+            'modificado_original' => 'datetime',
         ];
     }
 
@@ -35,6 +38,24 @@ class Archivo extends Model
     public function tamanoLegible(): string
     {
         return Formato::bytes($this->tamano);
+    }
+
+    /**
+     * Devuelve la huella (SHA-256) del contenido del archivo. Si todavía no está guardada, la calcula leyendo el fichero
+     * del disco y la guarda sin cambiar la fecha de modificación. Devuelve null si el fichero no está en el disco.
+     */
+    public function asegurarHash(): ?string
+    {
+        if ($this->hash === null) {
+            $ruta = Storage::disk('archivos')->path($this->ruta_almacenamiento);
+
+            if (is_file($ruta)) {
+                $this->hash = hash_file('sha256', $ruta);
+                DB::table('archivos')->where('id', $this->id)->update(['hash' => $this->hash]);
+            }
+        }
+
+        return $this->hash;
     }
 
     /**

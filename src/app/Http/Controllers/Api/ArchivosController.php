@@ -9,6 +9,7 @@ use App\Support\Almacenamiento;
 use App\Support\Nombres;
 use App\Support\Papelera;
 use App\Support\Rutas;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -71,7 +72,9 @@ class ArchivosController extends Controller
      * Sube un archivo (multipart, campo file) a la carpeta del campo path, que por defecto es la raíz y debe existir.
      * El campo name permite guardarlo con otro nombre. Si ya existe algo con ese nombre, responde 409, salvo que el campo
      * conflict valga overwrite (reemplaza el contenido) o rename (lo guarda como nombre (2).ext).
-     * Responde 201 si crea un archivo nuevo y 200 si sobrescribe uno existente.
+     * Con overwrite, el campo hash_esperado (la huella SHA-256 que el cliente cree que tiene el archivo del servidor) evita
+     * pisar cambios ajenos: si no coincide, o el archivo ya no existe, responde 409. El campo modificado (UTC con Z) guarda
+     * la fecha original del archivo. Responde 201 si crea un archivo nuevo y 200 si sobrescribe uno existente.
      */
     public function subir(Request $request): JsonResponse
     {
@@ -83,6 +86,8 @@ class ArchivosController extends Controller
             'path' => ['nullable', 'string', 'max:4096'],
             'name' => ['nullable', 'string', 'max:255'],
             'conflict' => ['nullable', 'in:overwrite,rename'],
+            'hash_esperado' => ['nullable', 'string', 'regex:/^[A-Fa-f0-9]{64}$/'],
+            'modificado' => ['nullable', 'string', 'regex:/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/', 'date'],
         ], [
             'file.max' => __('El archivo supera el límite de :mb MB.', ['mb' => $maximoMb]),
         ]);
@@ -106,7 +111,11 @@ class ArchivosController extends Controller
         abort_if(($hayCarpeta || $hayArchivo) && $conflicto === null, 409, __('Ya existe un archivo o carpeta con ese nombre aquí.'));
         abort_if($hayCarpeta && $conflicto === 'sobrescribir', 409, __('No se puede sobrescribir una carpeta.'));
 
-        $archivo = Almacenamiento::subir($usuario, $fichero, $carpeta?->id, $conflicto, $nombre);
+        $modificado = $request->filled('modificado')
+            ? Carbon::parse($request->input('modificado'))->setTimezone(config('app.timezone'))
+            : null;
+
+        $archivo = Almacenamiento::subir($usuario, $fichero, $carpeta?->id, $conflicto, $nombre, $request->input('hash_esperado'), $modificado);
 
         return response()->json(
             Rutas::describir($archivo, Rutas::deElemento($archivo)),

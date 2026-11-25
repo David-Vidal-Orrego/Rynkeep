@@ -115,7 +115,8 @@ class Rutas
 
     /**
      * Prepara los datos de un archivo o carpeta tal y como los devuelve la API: id, nombre, tipo (archivo o carpeta),
-     * ruta, tamaño en bytes (solo archivos), tipo de contenido (solo archivos) y fecha de modificación en UTC (2026-11-25T10:00:00Z).
+     * ruta, tamaño en bytes, tipo de contenido y huella SHA-256 (solo archivos), fecha de modificación en el servidor y fecha
+     * original del archivo si el cliente la indicó (solo archivos). Las fechas van en UTC (2026-11-25T10:00:00Z).
      * Los id de archivos y de carpetas pueden coincidir, así que el tipo es lo que los distingue.
      */
     public static function describir(Archivo|Carpeta $elemento, string $ruta): array
@@ -129,7 +130,9 @@ class Rutas
             'ruta' => $ruta,
             'tamano' => $esArchivo ? $elemento->tamano : null,
             'tipo_mime' => $esArchivo ? $elemento->tipo_archivo : null,
+            'hash' => $esArchivo ? $elemento->hash : null,
             'modificado' => $elemento->updated_at?->copy()->utc()->format('Y-m-d\TH:i:s\Z'),
+            'modificado_original' => $esArchivo ? $elemento->modificado_original?->copy()->utc()->format('Y-m-d\TH:i:s\Z') : null,
         ];
     }
 }

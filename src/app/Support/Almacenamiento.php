@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Archivo;
 use App\Models\Usuario;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -24,16 +25,21 @@ class Almacenamiento
      * pasa a tener el contenido nuevo y conserva su identificador y su enlace público) o "renombrar" (el nuevo se guarda como
      * informe (2).pdf). Sin indicación, rechaza la subida. Una carpeta nunca se sobrescribe.
      * Si no se da un nombre, se usa el que trae el archivo.
+     *
+     * Guarda la huella SHA-256 del contenido. Si se indica la huella que el cliente cree que tiene el archivo del servidor
+     * ($hashEsperado) y se sobrescribe, comprueba que coincida; si no, responde 409 y no lo pisa, para no perder cambios
+     * hechos desde otro sitio. También puede guardar la fecha original del archivo ($modificadoOriginal), que solo informa.
      */
-    public static function subir(Usuario $propietario, UploadedFile $fichero, ?int $carpetaId, ?string $conflicto, ?string $nombre = null): Archivo
+    public static function subir(Usuario $propietario, UploadedFile $fichero, ?int $carpetaId, ?string $conflicto, ?string $nombre = null, ?string $hashEsperado = null, ?Carbon $modificadoOriginal = null): Archivo
     {
         $tamano = $fichero->getSize();
+        $hash = hash_file('sha256', $fichero->getRealPath());
         $nombre = mb_substr($nombre ?? $fichero->getClientOriginalName(), 0, 255);
         $ruta = null;
         $rutaAnterior = null;
 
         try {
-            $archivo = DB::transaction(function () use ($propietario, $fichero, $tamano, $carpetaId, $conflicto, $nombre, &$ruta, &$rutaAnterior) {
+            $archivo = DB::transaction(function () use ($propietario, $fichero, $tamano, $hash, $hashEsperado, $modificadoOriginal, $carpetaId, $conflicto, $nombre, &$ruta, &$rutaAnterior) {
                 $usuario = Usuario::whereKey($propietario->id)->lockForUpdate()->first();
 
                 $existente = Nombres::archivo($usuario->id, $carpetaId, $nombre);
@@ -49,6 +55,16 @@ class Almacenamiento
                     throw ValidationException::withMessages([
                         'archivo' => __('No se puede sobrescribir una carpeta.'),
                     ]);
+                }
+
+                if ($hashEsperado !== null && $conflicto === 'sobrescribir') {
+                    abort_if($existente === null, 409, __('El archivo ya no existe en el servidor.'));
+
+                    abort_unless(
+                        hash_equals((string) $existente->asegurarHash(), strtolower($hashEsperado)),
+                        409,
+                        __('El archivo del servidor ha cambiado desde la última vez que lo viste.')
+                    );
                 }
 
                 $sobrescribe = $conflicto === 'sobrescribir' && $existente !== null;
@@ -82,6 +98,8 @@ class Almacenamiento
                 $archivo->ruta_almacenamiento = $ruta;
                 $archivo->tamano = $tamano;
                 $archivo->tipo_archivo = $fichero->getMimeType() ?? 'application/octet-stream';
+                $archivo->hash = $hash;
+                $archivo->modificado_original = $modificadoOriginal;
                 $archivo->save();
 
                 $usuario->espacio_usado = $usuario->espacio_usado - $liberado + $tamano;
