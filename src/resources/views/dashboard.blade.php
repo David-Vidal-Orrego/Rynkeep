@@ -100,13 +100,13 @@
                                 <x-icono nombre="archivo" class="h-6 w-6 shrink-0 text-suave" />
                                 <span class="min-w-0">
                                     <span class="block truncate text-texto">{{ $archivo->nombre_original }}</span>
-                                    <span class="block sm:hidden text-xs text-suave">{{ $archivo->tamanoLegible() }} · {{ $archivo->created_at->format('d/m/Y') }}</span>
+                                    <span class="block sm:hidden text-xs text-suave">{{ $archivo->tamanoLegible() }} · {{ $archivo->updated_at->format('d/m/Y') }}</span>
                                 </span>
                                 @if ($archivo->enlace)
                                 <span class="shrink-0 text-xs {{ $archivo->enlace->haCaducado() ? 'text-peligro' : 'text-primario' }}">{{ $archivo->enlace->haCaducado() ? __('Caducado') : __('Compartido') }}</span>
                                 @endif
                             </div>
-                            <span class="hidden sm:block w-40 text-sm text-suave">{{ $archivo->created_at->format('d/m/Y H:i') }}</span>
+                            <span class="hidden sm:block w-40 text-sm text-suave">{{ $archivo->updated_at->format('d/m/Y H:i') }}</span>
                             <span class="hidden sm:block w-24 text-sm text-suave">{{ $archivo->tamanoLegible() }}</span>
 
                             <div class="w-8 shrink-0">

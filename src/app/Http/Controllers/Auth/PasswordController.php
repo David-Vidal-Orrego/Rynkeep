@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\TokenApi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ class PasswordController extends Controller
      * Valida la contraseña actual y la nueva, guarda la nueva cifrada y borra
      * de la tabla de sesiones todas las del usuario excepto la actual. Así,
      * si alguien tenía la sesión abierta en otro dispositivo, se le echa.
+     * También borra sus tokens de sesión de la API; los personales se conservan
+     * porque existen para no depender de la contraseña y se pueden quitar desde el perfil.
      */
     public function update(Request $request): RedirectResponse
     {
@@ -33,6 +36,8 @@ class PasswordController extends Controller
             ->where('user_id', $request->user()->getAuthIdentifier())
             ->where('id', '!=', $request->session()->getId())
             ->delete();
+
+        $request->user()->tokensApi()->where('tipo', TokenApi::TIPO_SESION)->delete();
 
         return back()->with('status', 'password-updated');
     }

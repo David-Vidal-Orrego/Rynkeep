@@ -7,6 +7,9 @@ return [
     'tamano_maximo_mb' => (int) env('RYNKEEP_TAMANO_MAXIMO_MB', 100),
     'dias_papelera' => (int) env('RYNKEEP_DIAS_PAPELERA', 30),
 
+    // Horas que dura el token que devuelve el login de la API (los tokens personales no caducan solos)
+    'api_token_horas' => (int) env('RYNKEEP_API_TOKEN_HORAS', 24),
+
     // Idiomas disponibles: se detectan solos mirando los archivos lang/xx.json (ver README)
     'idiomas' => \App\Support\Idiomas::disponibles(),
 ];

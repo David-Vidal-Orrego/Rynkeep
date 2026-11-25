@@ -9,6 +9,7 @@ use App\Http\Controllers\CarpetaController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\EnlaceController;
 use App\Http\Controllers\EnlacePublicoController;
+use App\Http\Controllers\TokenApiController;
 
 Route::redirect('/', '/login');
 
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/idioma', [ProfileController::class, 'actualizarIdioma'])->name('profile.idioma');
+    Route::post('/profile/tokens', [TokenApiController::class, 'store'])->name('profile.tokens.store');
+    Route::delete('/profile/tokens/{token}', [TokenApiController::class, 'destroy'])->name('profile.tokens.destroy');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

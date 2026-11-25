@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carpeta;
+use App\Support\Nombres;
 use App\Support\Papelera;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CarpetaController extends Controller
 {
     /**
-     * Crea una carpeta, dentro de otra si se indica, comprobando que la carpeta padre es del usuario.
+     * Crea una carpeta, dentro de otra si se indica, comprobando que la carpeta padre es del usuario
+     * y que no hay ya un archivo o carpeta con ese nombre en el mismo sitio.
      */
     public function store(Request $request)
     {
@@ -23,6 +26,14 @@ class CarpetaController extends Controller
             abort_if($padre === null, 404);
         }
 
+        $datos['nombre'] = trim($datos['nombre']);
+
+        if (Nombres::ocupado($request->user()->id, $datos['carpeta_padre_id'] ?? null, $datos['nombre'])) {
+            throw ValidationException::withMessages([
+                'nombre' => __('Ya existe un archivo o carpeta con ese nombre aquí.'),
+            ]);
+        }
+
         $request->user()->carpetas()->create($datos);
 
         return back()->with('status', __('Carpeta creada.'));
@@ -33,7 +44,7 @@ class CarpetaController extends Controller
      *
      * Comprueba que la carpeta es del usuario que hace la petición (si no, responde 404 como si no existiera),
      * valida el nombre nuevo en una bolsa de errores propia de esa carpeta para que solo se reabra su ventana
-     * si algo falla, y guarda el cambio.
+     * si algo falla, rechaza el cambio si ya hay un archivo o carpeta con ese nombre en el mismo sitio, y guarda el cambio.
      */
     public function update(Request $request, Carpeta $carpeta)
     {
@@ -42,6 +53,14 @@ class CarpetaController extends Controller
         $datos = $request->validateWithBag('renombrar-'.$carpeta->id, [
             'nombre' => ['required', 'string', 'max:100'],
         ]);
+
+        $datos['nombre'] = trim($datos['nombre']);
+
+        if (Nombres::ocupado($carpeta->usuario_id, $carpeta->carpeta_padre_id, $datos['nombre'], $carpeta->id)) {
+            throw ValidationException::withMessages([
+                'nombre' => __('Ya existe un archivo o carpeta con ese nombre aquí.'),
+            ])->errorBag('renombrar-'.$carpeta->id);
+        }
 
         $carpeta->update($datos);
 

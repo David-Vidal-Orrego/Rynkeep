@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carpeta;
+use App\Support\Nombres;
 use App\Support\Papelera;
 use Illuminate\Http\Request;
 
@@ -28,7 +29,8 @@ class PapeleraController extends Controller
 
     /**
      * Saca un archivo de la papelera. Si la carpeta donde estaba también está en la papelera,
-     * el archivo vuelve a la raíz para que no quede escondido.
+     * el archivo vuelve a la raíz para que no quede escondido. Si ya hay algo con su nombre en el sitio
+     * donde vuelve, se le añade un número (informe (2).pdf).
      */
     public function restaurar(Request $request, int $id)
     {
@@ -37,6 +39,8 @@ class PapeleraController extends Controller
         if ($archivo->carpeta_id && Carpeta::withTrashed()->find($archivo->carpeta_id)?->trashed()) {
             $archivo->carpeta_id = null;
         }
+
+        $archivo->nombre_original = Nombres::libre($archivo->usuario_id, $archivo->carpeta_id, $archivo->nombre_original);
 
         $archivo->restore();
 
@@ -57,7 +61,8 @@ class PapeleraController extends Controller
 
     /**
      * Saca una carpeta de la papelera junto con todo lo que contiene. Si la carpeta que la contenía
-     * también está en la papelera, vuelve a la raíz para que no quede escondida.
+     * también está en la papelera, vuelve a la raíz para que no quede escondida. Si ya hay algo con su nombre
+     * en el sitio donde vuelve, se le añade un número.
      */
     public function restaurarCarpeta(Request $request, int $id)
     {
@@ -66,6 +71,8 @@ class PapeleraController extends Controller
         if ($carpeta->carpeta_padre_id && Carpeta::withTrashed()->find($carpeta->carpeta_padre_id)?->trashed()) {
             $carpeta->carpeta_padre_id = null;
         }
+
+        $carpeta->nombre = Nombres::libre($carpeta->usuario_id, $carpeta->carpeta_padre_id, $carpeta->nombre, true);
 
         $carpeta->restore();
 

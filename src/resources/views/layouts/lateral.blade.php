@@ -1,5 +1,6 @@
 @php
     $carpetaNuevaId = request()->routeIs('dashboard') ? request()->route('carpeta')?->id : null;
+    $nombresActuales = App\Support\Nombres::deCarpeta(Auth::id(), $carpetaNuevaId);
     $claseEnlace = 'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition';
     $activo = 'bg-fondo text-texto font-medium';
     $inactivo = 'text-suave hover:bg-fondo hover:text-texto';
@@ -54,7 +55,8 @@
 <form id="form-subida" method="POST" action="{{ route('archivos.store') }}" enctype="multipart/form-data" class="hidden">
     @csrf
     <input type="hidden" name="carpeta_id" value="{{ $carpetaNuevaId }}">
-    <input type="file" name="archivo" id="archivo" data-max="{{ config('rynkeep.tamano_maximo_mb') * 1024 * 1024 }}">
+    <input type="hidden" name="conflicto" id="conflicto" value="">
+    <input type="file" name="archivo" id="archivo" data-max="{{ config('rynkeep.tamano_maximo_mb') * 1024 * 1024 }}" data-nombres="{{ json_encode($nombresActuales) }}">
 </form>
 
 <x-modal name="nueva-carpeta" :show="$errors->has('nombre')" maxWidth="md">
@@ -71,7 +73,23 @@
     </form>
 </x-modal>
 
+<x-modal name="archivo-duplicado" maxWidth="md">
+    <div class="p-6 space-y-4">
+        <h2 class="text-lg font-medium text-texto">{{ __('Ya existe con ese nombre') }}</h2>
+        <p id="texto-duplicado" class="text-sm text-suave break-words"></p>
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <x-secondary-button type="button" x-on:click="$dispatch('close')" class="justify-center">{{ __('Cancelar') }}</x-secondary-button>
+            <x-secondary-button type="button" id="duplicado-conservar" class="justify-center">{{ __('Conservar ambos') }}</x-secondary-button>
+            <x-primary-button type="button" id="duplicado-sobrescribir" class="justify-center">{{ __('Sobrescribir') }}</x-primary-button>
+        </div>
+    </div>
+</x-modal>
+
 <script>
+    document.getElementById('archivo').addEventListener('click', function() {
+        this.value = '';
+    });
+
     document.getElementById('archivo').addEventListener('change', function() {
         var fichero = this.files[0];
         if (!fichero) return;
@@ -82,7 +100,32 @@
             return;
         }
 
+        var nombres = JSON.parse(this.dataset.nombres || '{}');
+        var clave = fichero.name.toLowerCase();
+        var esArchivo = (nombres.archivos || []).indexOf(clave) !== -1;
+        var esCarpeta = (nombres.carpetas || []).indexOf(clave) !== -1;
+
+        if (esArchivo || esCarpeta) {
+            document.getElementById('texto-duplicado').textContent = @js(__('Ya existe «:nombre» en esta carpeta. ¿Qué quieres hacer?')).replace(':nombre', fichero.name);
+            document.getElementById('duplicado-sobrescribir').style.display = esCarpeta ? 'none' : '';
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'archivo-duplicado' }));
+            return;
+        }
+
+        enviarArchivo('');
+    });
+
+    function enviarArchivo(conflicto) {
+        document.getElementById('conflicto').value = conflicto;
         document.getElementById('texto-nuevo').textContent = @js(__('Subiendo...'));
         document.getElementById('form-subida').submit();
+    }
+
+    document.getElementById('duplicado-conservar').addEventListener('click', function() {
+        enviarArchivo('renombrar');
+    });
+
+    document.getElementById('duplicado-sobrescribir').addEventListener('click', function() {
+        enviarArchivo('sobrescribir');
     });
 </script>

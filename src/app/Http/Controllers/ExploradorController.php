@@ -26,7 +26,7 @@ class ExploradorController extends Controller
         $archivos = $usuario->archivos()
             ->where('carpeta_id', $carpeta?->id)
             ->with('enlace')
-            ->latest()
+            ->latest('updated_at')
             ->get();
 
         $ruta = [];

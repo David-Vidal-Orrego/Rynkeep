@@ -86,6 +86,14 @@ class Usuario extends Authenticatable
     }
 
     /**
+     * Tokens de la API del usuario, de sesión y personales.
+     */
+    public function tokensApi(): HasMany
+    {
+        return $this->hasMany(TokenApi::class);
+    }
+
+    /**
      * Etiquetas del usuario.
      */
     public function etiquetas(): HasMany

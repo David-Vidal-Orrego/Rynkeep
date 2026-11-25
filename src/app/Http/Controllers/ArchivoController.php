@@ -3,19 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Archivo;
-use App\Models\Usuario;
+use App\Support\Almacenamiento;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class ArchivoController extends Controller
 {
     /**
-     * Sube un archivo. Comprueba el tamaño máximo y el espacio libre del usuario dentro de una transacción con el usuario bloqueado,
-     * para que dos subidas a la vez no se salten el límite. Si algo falla, borra el fichero que ya se hubiera guardado.
+     * Sube un archivo desde la web. Valida el tamaño y la carpeta de destino y deja el guardado en Almacenamiento::subir,
+     * que comprueba el espacio libre y qué hacer si ya existe un archivo con el mismo nombre (campo conflicto).
      */
     public function store(Request $request)
     {
@@ -24,51 +20,18 @@ class ArchivoController extends Controller
         $request->validate([
             'archivo' => ['required', 'file', 'max:'.($maximoMb * 1024)],
             'carpeta_id' => ['nullable', 'integer'],
+            'conflicto' => ['nullable', 'in:sobrescribir,renombrar'],
         ], [
             'archivo.max' => __('El archivo supera el límite de :mb MB.', ['mb' => $maximoMb]),
         ]);
 
-        $fichero = $request->file('archivo');
-        $tamano = $fichero->getSize();
-        $usuarioId = $request->user()->id;
-        $ruta = null;
-        $carpetaId = $request->input('carpeta_id');
+        $carpetaId = $request->input('carpeta_id') ?: null;
 
         if ($carpetaId) {
             abort_if($request->user()->carpetas()->find($carpetaId) === null, 404);
         }
 
-        try {
-            DB::transaction(function () use ($fichero, $tamano, $usuarioId, $carpetaId, &$ruta) {
-                $usuario = Usuario::whereKey($usuarioId)->lockForUpdate()->first();
-
-                if ($usuario->espacio_usado + $tamano > $usuario->espacio_limite) {
-                    throw ValidationException::withMessages([
-                        'archivo' => __('No tienes espacio suficiente para subir este archivo.'),
-                    ]);
-                }
-
-                $ruta = Storage::disk('archivos')
-                    ->putFileAs('u' . $usuario->id, $fichero, (string) Str::uuid());
-
-                $archivo = new Archivo([
-                    'nombre_original' => mb_substr($fichero->getClientOriginalName(), 0, 255),
-                    'carpeta_id' => $carpetaId ?: null,
-                ]);
-                $archivo->usuario_id = $usuario->id;
-                $archivo->ruta_almacenamiento = $ruta;
-                $archivo->tamano = $tamano;
-                $archivo->tipo_archivo = $fichero->getMimeType() ?? 'application/octet-stream';
-                $archivo->save();
-
-                $usuario->increment('espacio_usado', $tamano);
-            });
-        } catch (Throwable $e) {
-            if ($ruta) {
-                Storage::disk('archivos')->delete($ruta);
-            }
-            throw $e;
-        }
+        Almacenamiento::subir($request->user(), $request->file('archivo'), $carpetaId, $request->input('conflicto'));
 
         return back()->with('status', __('Archivo subido.'));
     }
